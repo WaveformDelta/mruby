@@ -1,5 +1,13 @@
 [![Build Status][build-status-img]][travis-ci]
 
+## mruby with Integer Division Support
+
+This is a fork of the mruby project that includes support for integer division compatible with that in other Rubys, so that 
+
+`(1 / 2) => 0`
+
+This is enabled with the compiler variable `MRB_INTEGER_DIVISION`: when set during compilation, it will enable integer division behavior. This mruby is otherwise compatible with mruby 1.4.0.
+
 ## What is mruby
 
 mruby is the lightweight implementation of the Ruby language complying to (part

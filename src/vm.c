@@ -2416,6 +2416,9 @@ RETRY_TRY_BLOCK:
     CASE(OP_DIV) {
       /* A B C  R(A) := R(A)/R(A+1) (Syms[B]=:/,C=1)*/
       int a = GETARG_A(i);
+#ifdef MRB_INTEGER_DIVISION
+      int integer_div = FALSE;
+#endif
 #ifndef MRB_WITHOUT_FLOAT
       double x, y, f;
 #endif
@@ -2433,6 +2436,9 @@ RETRY_TRY_BLOCK:
 #else
         x = (mrb_float)mrb_fixnum(regs[a]);
         y = (mrb_float)mrb_fixnum(regs[a+1]);
+#ifdef MRB_INTEGER_DIVISION
+        integer_div = TRUE;
+#endif
         break;
       case TYPES2(MRB_TT_FIXNUM,MRB_TT_FLOAT):
         x = (mrb_float)mrb_fixnum(regs[a]);
@@ -2452,6 +2458,35 @@ RETRY_TRY_BLOCK:
       }
 
 #ifndef MRB_WITHOUT_FLOAT
+#ifdef MRB_INTEGER_DIVISION
+      if (integer_div)
+      {
+        if (y == 0 || (x == MRB_INT_MIN && y == -1)) {
+           SET_FLOAT_VALUE(mrb, regs[a], (mrb_float)x / (mrb_float)y);
+        }
+        else {
+          mrb_int div, mod;
+          if (y < 0) {
+            if (x < 0)
+              div = -x / -y;
+            else
+              div = - (x / -y);
+          }
+          else {
+            if (x < 0)
+              div = - (-x / y);
+            else
+              div = x / y;
+          }
+          mod = x - div*y;
+          if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+            div -= 1;
+          }
+          SET_INT_VALUE(regs[a], div);
+        }        
+      }
+      else {
+#endif
       if (y == 0) {
         if (x > 0) f = INFINITY;
         else if (x < 0) f = -INFINITY;
@@ -2461,7 +2496,10 @@ RETRY_TRY_BLOCK:
         f = x / y;
       }
       SET_FLOAT_VALUE(mrb, regs[a], f);
+#ifdef MRB_INTEGER_DIVISION
+      }
 #endif
+#endif /* #ifndef MRB_WITHOUT_FLOAT */
       NEXT;
     }
 
